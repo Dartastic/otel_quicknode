@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_quicknode_suppression.dart';
 
@@ -50,45 +49,56 @@ Future<T> tracedQuickNode<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_quicknode');
   final span = t.startSpan('quicknode $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'quicknode');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'quicknode')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.endpointId != null) {
-        span.setStringAttribute('quicknode.endpoint.id', res.endpointId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('quicknode.endpoint.id', res.endpointId!)]));
       }
       if (res.chain != null) {
-        span.setStringAttribute('quicknode.chain', res.chain!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('quicknode.chain', res.chain!)]));
       }
       if (res.network != null) {
-        span.setStringAttribute('quicknode.network', res.network!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('quicknode.network', res.network!)]));
       }
       if (res.method != null) {
-        span.setStringAttribute('quicknode.method', res.method!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('quicknode.method', res.method!)]));
       }
       if (res.blockHeight != null) {
-        span.setIntAttribute('quicknode.block.height', res.blockHeight!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('quicknode.block.height', res.blockHeight!)]));
       }
       if (res.addonName != null) {
-        span.setStringAttribute('quicknode.addon', res.addonName!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('quicknode.addon', res.addonName!)]));
       }
       if (res.creditsUsed != null) {
-        span.setIntAttribute('quicknode.credits', res.creditsUsed!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('quicknode.credits', res.creditsUsed!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('quicknode.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('quicknode.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'quicknode.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'quicknode.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
