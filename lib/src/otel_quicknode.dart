@@ -1,11 +1,12 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_quicknode_suppression.dart';
 
 class QuickNodeResult {
+  /// Creates a result.
   const QuickNodeResult({
     this.endpointId,
     this.chain,
@@ -31,8 +32,13 @@ class QuickNodeResult {
   final String? errorMessage;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class QuickNodeCallResult<T> {
+  /// Creates a call result.
   const QuickNodeCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final QuickNodeResult? result;
 }
@@ -40,62 +46,65 @@ class QuickNodeCallResult<T> {
 Future<T> tracedQuickNode<T>({
   required String operation,
   required Future<QuickNodeCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (quickNodeInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_quicknode');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_quicknode');
   final span = t.startSpan('quicknode $operation', kind: SpanKind.client);
   try {
-    span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'quicknode')]));
+    span.addAttributes(OTelAPI.attributes(
+        [OTelAPI.attributeString('rpc.system', 'quicknode')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.endpointId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('quicknode.endpoint.id', res.endpointId!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('quicknode.endpoint.id', res.endpointId!)
+        ]));
       }
       if (res.chain != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('quicknode.chain', res.chain!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('quicknode.chain', res.chain!)]));
       }
       if (res.network != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('quicknode.network', res.network!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('quicknode.network', res.network!)]));
       }
       if (res.method != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('quicknode.method', res.method!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('quicknode.method', res.method!)]));
       }
       if (res.blockHeight != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('quicknode.block.height', res.blockHeight!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('quicknode.block.height', res.blockHeight!)
+        ]));
       }
       if (res.addonName != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('quicknode.addon', res.addonName!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('quicknode.addon', res.addonName!)]));
       }
       if (res.creditsUsed != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('quicknode.credits', res.creditsUsed!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeInt('quicknode.credits', res.creditsUsed!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('quicknode.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('quicknode.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-            ErrorResource.errorType.key,
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+            ErrorAttributes.errorType.key,
             res.errorCode ?? 'quicknode.error',
           )
         ]));
